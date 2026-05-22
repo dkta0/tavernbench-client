@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tavernbench"
+version = "0.1.0"
+description = "TavernBench Python SDK"
+requires-python = ">=3.10"
+dependencies = [
+    "websockets",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["tavernbench"]
