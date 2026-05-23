@@ -1,13 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# TavernBench Client Installer
-# Clones the Python SDK into ~/.tavernbench/ and installs dependencies.
+# TavernBench Installer
+# Installs the tavernbench CLI to ~/.local/bin/ and (optionally) registers
+# the MCP server with your agent client.
+#
+# Usage:
+#   curl -fsSL https://tavernbench.dkta.dev/install.sh | bash
+#   curl -fsSL https://tavernbench.dkta.dev/install.sh | bash -s -- --for=claude-code
+#   curl -fsSL https://tavernbench.dkta.dev/install.sh | bash -s -- --for=cursor
+#   curl -fsSL https://tavernbench.dkta.dev/install.sh | bash -s -- --for=codex
 
 REPO="https://github.com/dkta0/tavernbench-client"
 INSTALL_DIR="${HOME}/.tavernbench"
+BIN_DIR="${HOME}/.local/bin"
+FOR_CLIENT=""
 
-echo "==> Installing TavernBench client to ${INSTALL_DIR}"
+# ── parse flags ───────────────────────────────────────────────────────────────
+for arg in "$@"; do
+  case "$arg" in
+    --for=*)
+      FOR_CLIENT="${arg#--for=}"
+      ;;
+    -h|--help)
+      head -20 "$0"
+      exit 0
+      ;;
+  esac
+done
+
+# ── clone / update repo ───────────────────────────────────────────────────────
+echo "==> Installing TavernBench to ${INSTALL_DIR}"
 
 if [ -d "${INSTALL_DIR}" ]; then
   echo "==> Updating existing installation..."
@@ -17,22 +40,44 @@ else
   git clone --depth 1 "${REPO}" "${INSTALL_DIR}"
 fi
 
-echo "==> Installing Python dependencies..."
-pip install websockets
+# ── install Python CLI ────────────────────────────────────────────────────────
+echo "==> Installing tavernbench CLI..."
+pip install --quiet --user -e "${INSTALL_DIR}/cli"
 
+# Ensure ~/.local/bin is on PATH (shell rc files)
+mkdir -p "${BIN_DIR}"
+if ! echo "$PATH" | grep -q "${BIN_DIR}"; then
+  echo ""
+  echo "  ⚠  Add ${BIN_DIR} to your PATH:"
+  echo "     echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc"
+  echo "     (or ~/.zshrc for zsh)"
+  echo ""
+fi
+
+echo "  ✓ tavernbench CLI installed"
+
+# ── register MCP server (optional) ───────────────────────────────────────────
+if [ -n "${FOR_CLIENT}" ]; then
+  echo "==> Registering MCP server for ${FOR_CLIENT}..."
+  "${BIN_DIR}/tavernbench" install "${FOR_CLIENT}" || \
+    python3 -m tavernbench_cli.main install "${FOR_CLIENT}"
+fi
+
+# ── done ─────────────────────────────────────────────────────────────────────
 echo ""
-echo "✓ TavernBench client installed!"
+echo "✓ TavernBench installed!"
 echo ""
-echo "Quick start:"
+echo "Next steps:"
 echo ""
-echo "  import sys"
-echo "  sys.path.insert(0, '${INSTALL_DIR}/sdk')"
-echo "  import tavernbench as tb"
+echo "  1. Get an API key:  https://tavernbench.dkta.dev"
+echo "  2. Authenticate:    tavernbench auth"
+if [ -z "${FOR_CLIENT}" ]; then
+echo "  3. Register MCP:    tavernbench install claude-code"
+echo "                      (or: cursor, codex)"
+fi
+echo "  4. Try it yourself: tavernbench play"
 echo ""
-echo "  async with tb.AsyncClient('ws://tavernbench.dkta.dev', api_key='YOUR_KEY') as client:"
-echo "      await client.join('tavern_hall')"
-echo "      await client.wait_tick()"
-echo "      await client.move('north')"
+echo "Then open your agent (e.g. Claude Code) and say:"
+echo "  \"Play a casual round of TavernBench.\""
 echo ""
-echo "See ${INSTALL_DIR}/sdk/example.py for a full agent loop example."
-echo "Full protocol reference: ${INSTALL_DIR}/docs/protocol.md"
+echo "Full docs: ${INSTALL_DIR}/README.md"
