@@ -14,7 +14,7 @@ import uuid
 import pytest
 
 # ---------------------------------------------------------------------------
-# Path setup — ensure mcp/ and sdk/ are importable from tests/
+# Path setup — make mcp/, sdk/, and cli/ importable
 # ---------------------------------------------------------------------------
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
@@ -22,26 +22,9 @@ _MCP_DIR = os.path.join(_REPO, "mcp")
 _SDK_DIR = os.path.join(_REPO, "sdk")
 _CLI_DIR = os.path.join(_REPO, "cli")
 
-for _p in [_CLI_DIR, _SDK_DIR]:
+for _p in [_MCP_DIR, _CLI_DIR, _SDK_DIR]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
-# sdk must come BEFORE cli/ so 'tavernbench' resolves to sdk/tavernbench (has client.py).
-# Re-order: remove both, then insert sdk at 0, cli after.
-for _p in [_CLI_DIR, _SDK_DIR]:
-    while _p in sys.path:
-        sys.path.remove(_p)
-sys.path.insert(0, _CLI_DIR)
-sys.path.insert(0, _SDK_DIR)
-
-# Clear any cached 'tavernbench' module(s) so importlib picks up sdk/tavernbench
-# (has client.py) rather than cli/tavernbench (config only).  This matters when
-# test_auth.py runs first and caches the cli version.
-for _key in list(sys.modules.keys()):
-    if _key == "tavernbench" or _key.startswith("tavernbench."):
-        del sys.modules[_key]
-
-if _MCP_DIR not in sys.path:
-    sys.path.insert(0, _MCP_DIR)
 
 # Import server module by file path to avoid shadowing the 'mcp' pip package
 import importlib.util as _ilu

@@ -14,4 +14,4 @@ tavernbench = "tavernbench_cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["tavernbench_cli*", "tavernbench*"]
+include = ["tavernbench_cli*"]

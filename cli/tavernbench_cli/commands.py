@@ -126,14 +126,20 @@ def history(
 
 
 def install(
-    client: str = typer.Argument(..., help="MCP client to configure (claude, cursor, vscode, custom)."),
+    client: str = typer.Argument(..., help="MCP client to configure (claude-code, cursor, codex)."),
+    local: bool = typer.Option(False, "--local", help="Write to workspace-local config rather than user home."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print what would be written without changing anything."),
 ) -> None:
     """Install the TavernBench MCP server entry into a supported AI client config."""
-    typer.echo(f"[stub] install  client={client}")
-    raise typer.Exit()
+    from tavernbench_cli import install_cmd
+
+    install_cmd.run(client, local=local, dry_run=dry_run)
 
 
-def doctor() -> None:
-    """Run pre-flight checks (API key, server reachability, MCP server binary)."""
-    typer.echo("[stub] doctor")
-    raise typer.Exit()
+def doctor(
+    fix: bool = typer.Option(False, "--fix", help="Attempt to auto-repair detected issues."),
+) -> None:
+    """Run pre-flight checks (API key, server reachability, MCP registration)."""
+    from tavernbench_cli import doctor_cmd
+
+    raise typer.Exit(code=doctor_cmd.run(fix=fix))
