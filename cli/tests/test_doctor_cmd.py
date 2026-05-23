@@ -1,5 +1,5 @@
 """
-Regression tests for tavernbench/doctor_cmd.py — specifically the
+Regression tests for tavernbench_cli/doctor_cmd.py — specifically the
 real_home() vs Path.home() distinction and the fix_home_symlink() logic.
 
 Bug: doctor --fix was creating symlinks inside the profile home
@@ -20,7 +20,7 @@ import pytest
 
 # Ensure the package under test is importable
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from tavernbench import doctor_cmd
+from tavernbench_cli import doctor_cmd
 
 
 # ---------------------------------------------------------------------------
@@ -176,13 +176,13 @@ class TestFixHomeSymlink:
 
 class TestCheckApiKey:
     def test_returns_false_when_no_key(self):
-        with mock.patch("tavernbench.config.get_api_key", return_value=None):
+        with mock.patch("tavernbench_cli.config.get_api_key", return_value=None):
             ok, msg = doctor_cmd.check_api_key()
         assert not ok
         assert "tavernbench auth" in msg
 
     def test_returns_true_when_key_present(self):
-        with mock.patch("tavernbench.config.get_api_key", return_value="tb_testkey1234"):
+        with mock.patch("tavernbench_cli.config.get_api_key", return_value="tb_testkey1234"):
             ok, msg = doctor_cmd.check_api_key()
         assert ok
         assert "tb_tes" in msg
