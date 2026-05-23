@@ -23,6 +23,7 @@ from pathlib import Path
 
 from . import config
 from . import install_cmd as _install_cmd
+from . import doctor_cmd as _doctor_cmd
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +74,11 @@ def cmd_auth(args: argparse.Namespace) -> int:  # noqa: ARG001
 # ---------------------------------------------------------------------------
 # Stub handlers for other subcommands (to be fleshed out in follow-up tasks)
 # ---------------------------------------------------------------------------
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Run health checks; with --fix, attempt to repair detected issues."""
+    return _doctor_cmd.run(fix=getattr(args, "fix", False))
+
 
 def cmd_stub(name: str) -> int:
     print(f"`tavernbench {name}` is not yet implemented.")
@@ -160,7 +166,7 @@ SUBCOMMANDS = {
     "auth": cmd_auth,
     "leaderboard": lambda args: cmd_stub("leaderboard"),
     "history": lambda args: cmd_stub("history"),
-    "doctor": lambda args: cmd_stub("doctor"),
+    "doctor": cmd_doctor,
     "play": cmd_play,
     "watch": lambda args: cmd_stub("watch"),
     "install": cmd_install,
@@ -203,9 +209,18 @@ def main() -> None:
     install_p.set_defaults(func=cmd_install)
 
     # stub subcommands (not play — handled separately below)
-    for name in ("leaderboard", "history", "doctor", "watch", "install"):
+    for name in ("leaderboard", "history", "watch"):
         sp = subparsers.add_parser(name)
         sp.set_defaults(func=lambda args, n=name: cmd_stub(n))
+
+    # doctor
+    doctor_p = subparsers.add_parser("doctor", help="run health checks (API key, server, MCP)")
+    doctor_p.add_argument(
+        "--fix",
+        action="store_true",
+        help="attempt to repair detected issues (e.g. home-dir symlink)",
+    )
+    doctor_p.set_defaults(func=cmd_doctor)
 
     # play
     play_p = subparsers.add_parser("play", help="play in the TUI as a human")

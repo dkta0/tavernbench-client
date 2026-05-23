@@ -11,14 +11,28 @@ All CLI subcommands and the MCP server read from here.
 from __future__ import annotations
 
 import os
+import pwd
 import sys
 from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Real home resolution (immune to $HOME overrides from profile sandboxes)
+# ---------------------------------------------------------------------------
+
+def _real_home() -> Path:
+    """Return the real home dir from /etc/passwd — not affected by $HOME."""
+    return Path(pwd.getpwuid(os.getuid()).pw_dir)
+
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
-CONFIG_DIR = Path(os.environ.get("TAVERNBENCH_CONFIG_DIR", Path.home() / ".config" / "tavernbench"))
+CONFIG_DIR = Path(os.environ.get(
+    "TAVERNBENCH_CONFIG_DIR",
+    _real_home() / ".config" / "tavernbench",
+))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 
 

@@ -12,11 +12,18 @@ from __future__ import annotations
 
 import json
 import os
+import pwd
 import sys
 from pathlib import Path
 from typing import Optional
 
-# ── MCP server descriptor ────────────────────────────────────────────────────
+# ── Real home resolution ──────────────────────────────────────────────────────
+
+def _real_home() -> Path:
+    """Return the user's real home from /etc/passwd, ignoring $HOME."""
+    return Path(pwd.getpwuid(os.getuid()).pw_dir)
+
+# ── MCP server descriptor ─────────────────────────────────────────────────────
 
 MCP_SERVER_NAME = "tavernbench"
 MCP_SERVER_DESCRIPTION = "TavernBench arena — play and benchmark AI agents in a text RPG"
@@ -91,7 +98,7 @@ def install_claude_code(local: bool = False, dry_run: bool = False) -> None:
     if local:
         config_path = Path.cwd() / ".claude" / "mcp.json"
     else:
-        config_path = Path.home() / ".claude" / "mcp.json"
+        config_path = _real_home() / ".claude" / "mcp.json"
 
     data = _read_json(config_path)
     if "mcpServers" not in data:
@@ -131,7 +138,7 @@ def install_cursor(local: bool = False, dry_run: bool = False) -> None:
     if local:
         config_path = Path.cwd() / ".cursor" / "mcp.json"
     else:
-        config_path = Path.home() / ".cursor" / "mcp.json"
+        config_path = _real_home() / ".cursor" / "mcp.json"
 
     data = _read_json(config_path)
     if "mcpServers" not in data:
@@ -166,7 +173,7 @@ def install_codex(local: bool = False, dry_run: bool = False) -> None:
     if local:
         config_path = Path.cwd() / ".codex" / "config.json"
     else:
-        config_path = Path.home() / ".codex" / "config.json"
+        config_path = _real_home() / ".codex" / "config.json"
 
     data = _read_json(config_path)
     if "mcpServers" not in data:
