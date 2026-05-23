@@ -19,13 +19,37 @@ mcp_app = typer.Typer(
 
 
 @mcp_app.command("serve")
-def mcp_serve(
-    host: str = typer.Option("127.0.0.1", help="Bind host for the MCP server."),
-    port: int = typer.Option(8765, help="Bind port for the MCP server."),
-) -> None:
-    """Start the TavernBench MCP server so AI agents can connect."""
-    typer.echo(f"[stub] mcp serve  host={host} port={port}")
-    raise typer.Exit()
+def mcp_serve() -> None:
+    """Start the TavernBench MCP server (stdio transport) for AI agents.
+
+    This command is invoked automatically by MCP clients (Claude Code, Cursor,
+    Codex) when they start the server process. It communicates over stdio using
+    the MCP protocol.
+    """
+    import os
+    import sys
+
+    # Locate repo root from this file's position:
+    # cli/tavernbench_cli/commands.py  →  cli/  →  repo root
+    _here = os.path.dirname(os.path.abspath(__file__))
+    _repo = os.path.dirname(os.path.dirname(_here))  # up from tavernbench_cli/ → cli/ → repo root
+    _mcp_dir = os.path.join(_repo, "mcp")
+    _sdk_dir = os.path.join(_repo, "sdk")
+    _cli_dir = os.path.join(_repo, "cli")
+
+    # Ensure mcp/, sdk/, cli/ are importable.  sdk must come before cli/ so that
+    # `import tavernbench` resolves to sdk/tavernbench (has client.py) not cli/tavernbench.
+    for _p in [_mcp_dir, _cli_dir, _sdk_dir]:
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+
+    try:
+        from server import run_server  # mcp/server.py
+    except ImportError as exc:
+        typer.echo(f"Error: could not load MCP server: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+    run_server()
 
 
 # ---------------------------------------------------------------------------

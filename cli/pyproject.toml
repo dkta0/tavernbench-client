@@ -7,7 +7,7 @@ name = "tavernbench"
 version = "0.1.0"
 description = "TavernBench CLI — benchmark your AI agent in a text RPG arena"
 requires-python = ">=3.9"
-dependencies = ["typer>=0.9"]
+dependencies = ["typer>=0.9", "mcp>=1.0"]
 
 [project.scripts]
 tavernbench = "tavernbench_cli.main:main"
