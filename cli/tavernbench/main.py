@@ -17,6 +17,10 @@ import argparse
 import getpass
 import sys
 
+import os
+import subprocess
+from pathlib import Path
+
 from . import config
 from . import install_cmd as _install_cmd
 
@@ -76,6 +80,79 @@ def cmd_stub(name: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# play
+# ---------------------------------------------------------------------------
+
+def _find_play_binary() -> Path | None:
+    """Find the compiled play binary. Searches alongside this file's package,
+    then ~/.tavernbench/tui/play/play, then PATH."""
+    candidates = [
+        Path(__file__).parent.parent.parent / "tui" / "play" / "play",
+        Path.home() / ".tavernbench" / "tui" / "play" / "play",
+    ]
+    for p in candidates:
+        if p.exists() and os.access(p, os.X_OK):
+            return p
+    # Check PATH
+    import shutil
+    found = shutil.which("tavernbench-play")
+    if found:
+        return Path(found)
+    return None
+
+
+def _build_play_binary(src_dir: Path) -> Path | None:
+    """Attempt to build the play binary from source using go build."""
+    import shutil
+    if not shutil.which("go"):
+        return None
+    out = src_dir / "play"
+    result = subprocess.run(
+        ["go", "build", "-o", str(out), "."],
+        cwd=str(src_dir),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0 and out.exists():
+        return out
+    print(f"go build failed:\n{result.stderr}", file=sys.stderr)
+    return None
+
+
+def cmd_play(args: argparse.Namespace) -> int:
+    """Launch the human TUI player (Go binary)."""
+    host = getattr(args, "host", "tavernbench.dkta.dev")
+    zone = getattr(args, "zone", "tavern_hall")
+    api_key = getattr(args, "api_key", None) or config.get_api_key()
+
+    binary = _find_play_binary()
+    if binary is None:
+        # Try to build from source
+        src_dir = Path(__file__).parent.parent.parent / "tui" / "play"
+        if src_dir.exists():
+            print("Building play binary from source...", file=sys.stderr)
+            binary = _build_play_binary(src_dir)
+        if binary is None:
+            print(
+                "Error: play binary not found.\n"
+                "  Expected: tui/play/play  (or tavernbench-play on PATH)\n"
+                "  Build it: cd tui/play && go build -o play .",
+                file=sys.stderr,
+            )
+            return 1
+
+    cmd = [str(binary), host, zone]
+    if api_key:
+        cmd.append(api_key)
+
+    try:
+        os.execv(str(binary), cmd)
+    except OSError as exc:
+        print(f"Error launching play: {exc}", file=sys.stderr)
+        return 1
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -84,7 +161,7 @@ SUBCOMMANDS = {
     "leaderboard": lambda args: cmd_stub("leaderboard"),
     "history": lambda args: cmd_stub("history"),
     "doctor": lambda args: cmd_stub("doctor"),
-    "play": lambda args: cmd_stub("play"),
+    "play": cmd_play,
     "watch": lambda args: cmd_stub("watch"),
     "install": cmd_install,
     "mcp": lambda args: cmd_stub("mcp serve"),
@@ -102,10 +179,43 @@ def main() -> None:
     auth_p = subparsers.add_parser("auth", help="store/refresh API key")
     auth_p.set_defaults(func=cmd_auth)
 
-    # stub subcommands
-    for name in ("leaderboard", "history", "doctor", "play", "watch", "install"):
+    # install
+    install_p = subparsers.add_parser(
+        "install",
+        help="register MCP server with an agent client (claude-code, cursor, codex)",
+    )
+    install_p.add_argument(
+        "client",
+        choices=list(_install_cmd.SUPPORTED_CLIENTS),
+        help="agent client to register with",
+    )
+    install_p.add_argument(
+        "--local",
+        action="store_true",
+        help="write to workspace-local config (e.g. .cursor/mcp.json in cwd)",
+    )
+    install_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="print what would be written without making changes",
+    )
+    install_p.set_defaults(func=cmd_install)
+
+    # stub subcommands (not play — handled separately below)
+    for name in ("leaderboard", "history", "doctor", "watch", "install"):
         sp = subparsers.add_parser(name)
         sp.set_defaults(func=lambda args, n=name: cmd_stub(n))
+
+    # play
+    play_p = subparsers.add_parser("play", help="play in the TUI as a human")
+    play_p.add_argument("--host", default="tavernbench.dkta.dev",
+                        help="Arena host (default: tavernbench.dkta.dev)")
+    play_p.add_argument("--zone", default="tavern_hall",
+                        help="Zone to join (default: tavern_hall)")
+    play_p.add_argument("--api-key", dest="api_key", default=None,
+                        help="API key (default: from config)")
+    play_p.set_defaults(func=cmd_play)
 
     # mcp (with sub-subcommand `serve`)
     mcp_p = subparsers.add_parser("mcp", help="MCP server management")

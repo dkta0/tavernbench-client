@@ -1,8 +1,12 @@
-"""CLI subcommand implementations (stubs)."""
+"""CLI subcommand implementations."""
 from __future__ import annotations
 
+import getpass
+import sys
 import typer
 from typing import Optional
+
+from tavernbench_cli import config
 
 # ---------------------------------------------------------------------------
 # mcp sub-app (handles `tavernbench mcp serve`)
@@ -25,17 +29,44 @@ def mcp_serve(
 
 
 # ---------------------------------------------------------------------------
-# Top-level commands
+# auth — the one real implementation
 # ---------------------------------------------------------------------------
-
 
 def auth(
     key: Optional[str] = typer.Option(None, "--key", "-k", help="API key (omit for hidden prompt)."),
 ) -> None:
     """Save your TavernBench API key to ~/.config/tavernbench/config.toml."""
-    typer.echo(f"[stub] auth  key={'<hidden>' if key else 'prompt'}")
-    raise typer.Exit()
+    typer.echo("TavernBench — store API key")
+    typer.echo("")
+    typer.echo("Get your key at https://tavernbench.dkta.dev/dashboard")
+    typer.echo("")
 
+    existing = config.get_api_key()
+    if existing:
+        masked = existing[:6] + "..." + existing[-4:] if len(existing) > 10 else "***"
+        typer.echo(f"Current key: {masked}")
+        overwrite = typer.prompt("Overwrite? [y/N]", default="N")
+        if overwrite.strip().lower() not in ("y", "yes"):
+            typer.echo("Aborted — keeping existing key.")
+            raise typer.Exit()
+        typer.echo("")
+
+    if key:
+        api_key = key.strip()
+    else:
+        api_key = getpass.getpass("Paste API key (input hidden): ").strip()
+
+    if not api_key:
+        typer.echo("Error: no key entered.", err=True)
+        raise typer.Exit(code=1)
+
+    config.set_api_key(api_key)
+    typer.echo(f"\n✓ Key saved to {config.CONFIG_FILE}")
+
+
+# ---------------------------------------------------------------------------
+# Stub subcommands
+# ---------------------------------------------------------------------------
 
 def play(
     scenario: Optional[str] = typer.Option(None, "--scenario", "-s", help="Scenario ID to run."),

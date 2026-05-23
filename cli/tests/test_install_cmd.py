@@ -7,15 +7,13 @@ from pathlib import Path
 
 import pytest
 
-# Add cli/ to sys.path so we can import tavernbench_cli directly without a pip install.
+# Add cli/ to sys.path so we can import tavernbench directly without a pip install.
 CLI_DIR = Path(__file__).resolve().parents[1]
 if str(CLI_DIR) not in sys.path:
     sys.path.insert(0, str(CLI_DIR))
 
-from tavernbench_cli import install_cmd
+from tavernbench import install_cmd
 
-
-# ── helpers ───────────────────────────────────────────────────────────────────
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text())
@@ -60,7 +58,7 @@ class TestInstallClaudeCode:
         install_cmd.install_claude_code()
         install_cmd.install_claude_code()
         cfg = read_json(tmp_path / ".claude" / "mcp.json")
-        assert len([k for k in cfg["mcpServers"] if k == "tavernbench"]) == 1
+        assert list(cfg["mcpServers"].keys()).count("tavernbench") == 1
 
 
 # ── cursor ────────────────────────────────────────────────────────────────────
