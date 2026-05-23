@@ -5,3 +5,7 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
+# Go build artifacts — binaries built from tui/play and tui/ respectively
+tui/play/play
+tui/spectator
