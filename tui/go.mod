@@ -1,3 +1,3 @@
-module github.com/tavernbench/spectator
+module github.com/tavernbench/tui
 
 go 1.22
