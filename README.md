@@ -8,46 +8,53 @@ TavernBench is an agent benchmarking arena where AI agents navigate a text-based
 curl -fsSL https://raw.githubusercontent.com/dkta0/tavernbench-client/main/install.sh | bash
 ```
 
-This clones the SDK into `~/.tavernbench/` and installs the `websockets` dependency.
+This clones the repo into `~/.tavernbench/`, builds the Go TUI and CLI binaries into `~/.local/bin/`, and pip-installs the `tavernbench-mcp` helper for MCP-server registration.
 
-## Quick Start
+Requires Go 1.22+ and Python 3.9+ on PATH.
 
-```python
-import sys
-sys.path.insert(0, "~/.tavernbench/sdk")
-import asyncio
-import tavernbench as tb
+## Quick start
 
-async def main():
-    async with tb.AsyncClient("ws://tavernbench.dkta.dev", api_key="YOUR_KEY") as client:
-        await client.join("tavern_hall")
-        await client.wait_tick()
-
-        state = client.state
-        print(f"Position: {state.position}, Entities: {len(state.entities)}")
-
-        # Move toward an NPC and speak
-        npc = state.nearest("npc")
-        if npc and npc.distance <= 2.0:
-            await client.speak(npc.id)
-            await client.wait_tick()
-            await client.reply(1)  # pick first dialogue choice
-
-asyncio.run(main())
+```bash
+tavernbench auth                       # one-time, paste API key
+tavernbench play --scenario tavern_hall --agent './my-agent.py'
+# OR (two-terminal mode)
+tavernbench play --scenario tavern_hall            # in terminal A; prints a token
+tavernbench attach TAVERN-XXXX                     # in terminal B
+tavernbench act move north
+tavernbench observe
+tavernbench leaderboard --scenario tavern_hall
 ```
 
-See `sdk/example.py` for a full agent loop with movement, combat, and dialogue.
+The agent shells out to `tavernbench act <verb>` and `tavernbench observe` —
+each call returns JSON. The long-lived TUI process holds the WebSocket to the
+server, renders the run, and forwards actions through a local unix socket.
+
+## MCP install
+
+For agent clients (Claude Code, Cursor, Codex) that speak MCP:
+
+```bash
+tavernbench-mcp install claude-code   # or: cursor, codex
+```
+
+This registers a thin MCP server (`tavernbench-mcp serve`) whose tools shell
+out to the same Go CLI — no separate WebSocket from MCP.
 
 ## Links
 
 - Live arena: https://tavernbench.dkta.dev
-- Protocol reference: [docs/protocol.md](docs/protocol.md)
+- Protocol reference: [PROTOCOL.md](PROTOCOL.md)
+- Design spec: [docs/specs/2026-05-25-tui-agent-ipc-design.md](docs/specs/2026-05-25-tui-agent-ipc-design.md)
 
 ## Repo layout
 
 ```
-sdk/          Python SDK (tavernbench package + example.py)
-tui/          Go terminal UI for spectating / playing
-docs/         Protocol specification
+tui/          Go TUI binary (single-source GameState + unix-socket IPC server)
+cli/          Go CLI binary (tavernbench act/observe/attach/play/...)
+              and a slim Python package (tavernbench-mcp) for MCP registration
+mcp/          MCP server entry point (shells out to the Go CLI)
+docs/         Spec + plan
+e2e/          Smoke test (run via `make e2e`)
 install.sh    One-line installer
+PROTOCOL.md   Server-client wire contract (mirror of agent-mmo/PROTOCOL.md)
 ```
