@@ -108,9 +108,8 @@ func (h *Handler) sendAction(verb string, args map[string]any) error {
 	if args == nil {
 		args = map[string]any{}
 	}
-	args["action"] = verb
 	raw, _ := json.Marshal(args)
-	msg, _ := wsclient.EncodeMsg("1", fmt.Sprintf("%d", h.ref), "zone:"+h.zone, "action", json.RawMessage(raw))
+	msg, _ := wsclient.EncodeMsg("1", fmt.Sprintf("%d", h.ref), "zone:"+h.zone, "action:"+verb, json.RawMessage(raw))
 	return h.conn.WriteText(msg)
 }
 
