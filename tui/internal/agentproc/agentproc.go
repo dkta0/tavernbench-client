@@ -3,6 +3,7 @@ package agentproc
 import (
 	"bufio"
 	"io"
+	"os"
 	"os/exec"
 	"sync"
 	"syscall"
@@ -18,7 +19,7 @@ type Process struct {
 
 func Spawn(argv []string, extraEnv []string) (*Process, error) {
 	cmd := exec.Command(argv[0], argv[1:]...)
-	cmd.Env = append(cmd.Env, extraEnv...)
+	cmd.Env = append(os.Environ(), extraEnv...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	stdout, err := cmd.StdoutPipe()
