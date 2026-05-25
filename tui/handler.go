@@ -134,9 +134,10 @@ func (h *Handler) Heartbeat(interval time.Duration) {
 }
 
 func (h *Handler) waitForTick(timeout time.Duration) {
+	h.mu.Unlock()
+	defer h.mu.Lock()
 	select {
-	case t := <-h.tickC:
-		state.Apply(h.state, t)
+	case <-h.tickC:
 	case <-time.After(timeout):
 	}
 }
@@ -159,7 +160,9 @@ func (h *Handler) ReadLoop(s *state.GameState) {
 		case "tick":
 			var t state.Tick
 			if json.Unmarshal(arr[4], &t) == nil {
+				h.mu.Lock()
 				state.Apply(s, t)
+				h.mu.Unlock()
 				select {
 				case h.tickC <- t:
 				default:
@@ -172,7 +175,9 @@ func (h *Handler) ReadLoop(s *state.GameState) {
 				RunID      string `json:"run_id"`
 			}
 			if json.Unmarshal(arr[4], &qc) == nil {
+				h.mu.Lock()
 				state.Complete(s, qc.FinalScore, qc.Steps, qc.RunID)
+				h.mu.Unlock()
 			}
 		}
 	}
