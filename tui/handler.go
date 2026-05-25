@@ -113,6 +113,26 @@ func (h *Handler) sendAction(verb string, args map[string]any) error {
 	return h.conn.WriteText(msg)
 }
 
+// Heartbeat sends a phx_heartbeat to keep the WS alive. Run in its own goroutine.
+func (h *Handler) Heartbeat(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for range ticker.C {
+		h.mu.Lock()
+		if h.conn == nil {
+			h.mu.Unlock()
+			return
+		}
+		h.ref++
+		msg, _ := wsclient.EncodeMsg(nil, fmt.Sprintf("%d", h.ref), "phoenix", "phx_heartbeat", json.RawMessage("{}"))
+		err := h.conn.WriteText(msg)
+		h.mu.Unlock()
+		if err != nil {
+			return
+		}
+	}
+}
+
 func (h *Handler) waitForTick(timeout time.Duration) {
 	select {
 	case t := <-h.tickC:

@@ -65,6 +65,7 @@ func main() {
 		os.Exit(2)
 	}
 	go handler.ReadLoop(s)
+	go handler.Heartbeat(15 * time.Second)
 
 	var proc *agentproc.Process
 	if *agent != "" {
