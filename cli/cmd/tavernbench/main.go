@@ -47,6 +47,5 @@ Usage:
   tavernbench scenarios                            List scenarios (HTTP)
   tavernbench leaderboard --scenario X             Show leaderboard (HTTP)
   tavernbench auth [--key K]                       Store API key
-  tavernbench doctor [--fix]                       Pre-flight checks
-`)
+  tavernbench doctor [--fix]                       Pre-flight checks`)
 }
