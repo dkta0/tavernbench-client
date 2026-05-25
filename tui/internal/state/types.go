@@ -26,7 +26,7 @@ type Tick struct {
 	ZoneID   string   `json:"zone_id"`
 	Position *Pos     `json:"position"`
 	Entities []Entity `json:"entities"`
-	Quests   []Quest  `json:"quests"`
+	Quests   []Quest  `json:"quest_log"`
 	Score    int      `json:"score"`
 	Steps    int      `json:"steps"`
 }
