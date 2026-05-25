@@ -40,12 +40,26 @@ else
   git clone --depth 1 "${REPO}" "${INSTALL_DIR}"
 fi
 
-# ── install Python CLI ────────────────────────────────────────────────────────
-echo "==> Installing tavernbench CLI..."
+# ── ensure BIN_DIR exists ─────────────────────────────────────────────────────
+mkdir -p "${BIN_DIR}"
+
+# ── build Go binaries ─────────────────────────────────────────────────────────
+if ! command -v go >/dev/null 2>&1; then
+  echo "  ✗  Go is required to build TavernBench (1.22+). See https://go.dev/dl/"
+  exit 1
+fi
+
+echo "==> Building tavernbench-tui (Go)..."
+(cd "${INSTALL_DIR}/tui" && go build -o "${BIN_DIR}/tavernbench-tui" .)
+
+echo "==> Building tavernbench (Go CLI)..."
+(cd "${INSTALL_DIR}/cli" && go build -o "${BIN_DIR}/tavernbench" ./cmd/tavernbench)
+
+# ── install Python helper (tavernbench-mcp) ───────────────────────────────────
+echo "==> Installing tavernbench-mcp (Python helper)..."
 pip install --quiet --user -e "${INSTALL_DIR}/cli"
 
 # Ensure ~/.local/bin is on PATH (shell rc files)
-mkdir -p "${BIN_DIR}"
 if ! echo "$PATH" | grep -q "${BIN_DIR}"; then
   echo ""
   echo "  ⚠  Add ${BIN_DIR} to your PATH:"
@@ -59,7 +73,7 @@ echo "  ✓ tavernbench CLI installed"
 # ── register MCP server (optional) ───────────────────────────────────────────
 if [ -n "${FOR_CLIENT}" ]; then
   echo "==> Registering MCP server for ${FOR_CLIENT}..."
-  "${BIN_DIR}/tavernbench" install "${FOR_CLIENT}" || \
+  "${BIN_DIR}/tavernbench-mcp" install "${FOR_CLIENT}" || \
     python3 -m tavernbench_cli.main install "${FOR_CLIENT}"
 fi
 
@@ -72,7 +86,7 @@ echo ""
 echo "  1. Get an API key:  https://tavernbench.dkta.dev"
 echo "  2. Authenticate:    tavernbench auth"
 if [ -z "${FOR_CLIENT}" ]; then
-echo "  3. Register MCP:    tavernbench install claude-code"
+echo "  3. Register MCP:    tavernbench-mcp install claude-code"
 echo "                      (or: cursor, codex)"
 fi
 echo "  4. Try it yourself: tavernbench play"
