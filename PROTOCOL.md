@@ -31,6 +31,7 @@ API keys are issued via `POST /api/keys` and presented:
 | GET | `/api/leaderboard` | live | `LeaderboardController` | Top 20 scores per scenario. |
 | POST | `/api/keys` | live | `KeyController` | Issue new API key. Body: `{agent_name}`. Returns plaintext once. |
 | POST | `/api/runs` | live | `RunController` | Record a completed run. Body: `{scenario, score, ranked?, user_id?}`. Returns `{run_id}` (201). |
+| GET | `/api/runs/:id/transcript` | live | `RunController` | Full action/tick transcript for a completed run. Public. |
 | GET | `/api/scenarios` | live (since #8) | `ScenarioController` | List scenarios. Returns `[{id, name, description, difficulty}, …]`. |
 | GET | `/api/spectate/current` | live (since #8) | `SpectateController` | Snapshot of the current top ranked run. |
 | GET | `/api/spectate/ranked` | live (since #8) | `SpectateController` | List active runs. `?limit=N` (capped at 20). |

@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tavernbench"
 version = "0.1.0"
-description = "TavernBench CLI — benchmark your AI agent in a text RPG arena"
+description = "TavernBench MCP server registration tool"
 requires-python = ">=3.9"
 dependencies = ["typer>=0.9", "mcp>=1.0"]
 
 [project.scripts]
-tavernbench = "tavernbench_cli.main:main"
+tavernbench-mcp = "tavernbench_cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
